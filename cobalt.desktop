@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=cobalt
+Comment=A lightweight, world80-native Microsoft Teams client
+Exec=/home/aidan/dev/cobalt/cobalt.sh
+Icon=cobalt
+Terminal=false
+Categories=Network;InstantMessaging;Chat;
+StartupWMClass=cobalt

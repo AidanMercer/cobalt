@@ -1,0 +1,7 @@
+# cobalt needs PySide6 with the WebEngine libs present. On Arch:
+#   sudo pacman -S qt6-webengine libnotify
+#
+# qt6-webengine MUST be built with proprietary codecs (H.264) for Teams meeting
+# video — Arch's package is. The single-arg onPermissionRequested API needs
+# PySide6 >= 6.8. notify-send (libnotify) delivers desktop notifications.
+PySide6>=6.8
