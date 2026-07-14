@@ -24,7 +24,9 @@ WebEngineView {
     // --- permissions: auto-allow cam/mic/notifications for Teams; screen SHARE
     // is never here (it comes through desktopMediaRequested + the picker) ------
     onPermissionRequested: function (permission) {
-        var P = WebEnginePermission
+        // scoped enum (enforcesScopedEnums) — bare WebEnginePermission.X is
+        // undefined, which silently turned this whole handler into deny-all
+        var P = WebEnginePermission.PermissionType
         var t = permission.permissionType
         var isMedia = t === P.MediaAudioCapture || t === P.MediaVideoCapture
                     || t === P.MediaAudioVideoCapture
