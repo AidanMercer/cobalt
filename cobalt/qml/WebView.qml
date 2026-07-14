@@ -289,6 +289,10 @@ WebEngineView {
         if (r.width < 40 || r.height < 16) return null;
         if (r.width >= win.innerWidth * 0.95 && r.height >= win.innerHeight * 0.95)
             return null;
+        // a real popup never exceeds the viewport; Teams' virtualized message
+        // list body is absolute + z-indexed + thousands of px tall, and carding
+        // it blacks out the whole chat column during scroll
+        if (r.height > win.innerHeight * 1.2) return null;
         return r;
     }
     function strip(el) {
