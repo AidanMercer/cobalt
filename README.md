@@ -66,17 +66,24 @@ the Teams view (which otherwise swallows them). Normal mode by default.
 
 | Key | Action |
 |-----|--------|
+| `h` | the key sheet — every bind, grouped; any key closes it |
+| `c` / `e` | jump to Chat / Calendar · `a` Activity, `s` Calls |
 | `f` | link hints — every clickable Teams control gets a home-row label; type it to click (reaches into same-origin iframes) |
 | `j` / `k` | scroll the pane under the cursor down / up (Teams scrolls inner panes, not the window) |
 | `d` / `u` | half-page down / up · `gg` / `G` top / bottom |
 | `i` / `Esc` | insert mode (type into Teams) / back to normal · `gi` focus first input |
-| `:` | ex line — `:q` quit, `:reload`, `:home`, `:zi`/`:zo`/`:zz` zoom |
+| `:` | ex line — `:q` quit, `:reload`, `:home`, `:zi`/`:zo`/`:zz` zoom, `:chat`/`:calendar` |
 | `/` then `n` / `N` | find in page, next / prev |
 | `zi` / `zo` / `zz` | zoom in / out / reset |
 | `r` / `R` | reload / reload bypassing cache |
 | `ZZ` or `Ctrl+Q` | quit for real (closing the window only hides it) |
 
-Counts work (`5j`). Binds are overridable under `[binds.normal]` in the config.
+The rail jumps (`c`/`e`/`a`/`s`) click Teams' own app-bar buttons, so they cost
+no reload. They're normal-mode binds — Teams focuses the composer on load, which
+auto-enters insert mode, so it's `Esc` first.
+
+Counts work (`5j`). Binds are overridable under `[binds.normal]` in the config;
+the `h` sheet reads the live bind table, so a rebind re-labels itself.
 The status line shows the current mode and pending keys.
 
 Other:
@@ -135,7 +142,7 @@ cobalt/
   hints.py         hint-mode session state
   js/
     hints.js       f link-hints, isolated world, recurses same-origin iframes
-    nav.js         j/k/d/u scroll targeting Teams' inner panes
+    nav.js         j/k/d/u scroll targeting Teams' inner panes + c/e/a/s app-bar jumps
     editable.js    reports focus in/out of text fields → insert mode
     qwebchannel.js vendored transport for editable.js
   qml/
@@ -144,6 +151,7 @@ cobalt/
     TitleBar.qml     world80 glass titlebar
     StatusBar.qml    vim mode + pending-keys line
     CmdLine.qml      the : / cmdline
+    HelpOverlay.qml  the h key sheet, rendered from the live bind table
     ScreenPicker.qml screen/window chooser for getDisplayMedia  ← the gate
     PopupWindow.qml  auth / join-meeting popups on the shared profile
 ```

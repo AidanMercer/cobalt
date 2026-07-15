@@ -1,5 +1,7 @@
 from PySide6.QtCore import Property, QEvent, QObject, Qt, QTimer, Signal, Slot
 
+from . import commands
+
 # The vim layer's entry point: every key in the app passes through KeyFilter
 # (installed on the root window) before the focused item — the WebEngineView —
 # ever sees it. Consuming = Teams never knows; passing = zero added latency.
@@ -19,6 +21,9 @@ DEFAULT_BINDS = {
         ":": "cmdline-open :", "/": "cmdline-open /",
         "n": "search-next", "N": "search-prev",
         "gh": "home",
+        # teams app bar — bare letters, no g prefix (h is the help sheet)
+        "c": "chat", "e": "calendar", "a": "activity", "s": "calls",
+        "h": "help",
         "<Esc>": "search-stop",
         "ZZ": "quit",
     },
@@ -87,6 +92,7 @@ class KeyController(QObject):
     config; QML only renders mode + pending."""
     modeChanged = Signal()
     pendingChanged = Signal()
+    bindsChanged = Signal()
 
     def __init__(self, cfg, api, parent=None):
         super().__init__(parent)
@@ -110,6 +116,7 @@ class KeyController(QObject):
 
     def set_registry(self, registry):
         self._registry = registry
+        self.bindsChanged.emit()
 
     def set_hints(self, hints):
         self._hints = hints
@@ -126,6 +133,7 @@ class KeyController(QObject):
                         m[k] = v
             merged[mode] = {k: v for k, v in m.items() if v}
         self._binds = merged
+        self.bindsChanged.emit()
 
     # ---- state shown in the status line -------------------------------------
     @Property(str, notify=modeChanged)
@@ -135,6 +143,25 @@ class KeyController(QObject):
     @Property(str, notify=pendingChanged)
     def pending(self):
         return self._count + self._seq
+
+    @Property("QVariantList", notify=bindsChanged)
+    def helpModel(self):
+        """Rows for the h sheet: the live bind table joined to each command's
+        own description, so rebinding in config.toml re-labels the sheet and a
+        command with no desc/group never shows up half-documented."""
+        rows = []
+        for mode in ("normal", "insert"):
+            for key, action in self._binds.get(mode, {}).items():
+                cmd = self._registry.get(action.partition(" ")[0])
+                if cmd is None or not cmd.group:
+                    continue
+                desc = commands.ACTION_DESC.get(action) or cmd.desc
+                if not desc:
+                    continue
+                rows.append({"group": cmd.group, "key": key, "desc": desc})
+        order = {g: i for i, g in enumerate(commands.GROUPS)}
+        rows.sort(key=lambda r: (order.get(r["group"], 99), r["key"].lower()))
+        return rows
 
     def set_mode(self, mode, reason="manual"):
         if mode == self._mode:
@@ -185,6 +212,12 @@ class KeyController(QObject):
             if ks and ks != "DEAD" and self._hints is not None:
                 self._hints.key(ks)
             return True           # hint mode owns every key
+        if self._mode == "help":
+            # the sheet is a glance, not a place to live: any real key dismisses
+            # it (bare modifiers don't, so Shift alone doesn't flap it shut)
+            if keystr(ev) is not None:
+                self.set_mode("normal")
+            return True
         if self._mode == "insert":
             ks = keystr(ev)
             cmdline = self._binds["insert"].get(ks) if ks else None

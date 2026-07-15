@@ -128,6 +128,11 @@ Window {
         function show(m, e) { error = e; msg = m; toastTimer.restart() }
     }
 
+    // the h key sheet (covers the whole window while in help mode)
+    HelpOverlay {
+        anchors.fill: parent
+    }
+
     // screen-share source chooser (covers the whole window when active)
     ScreenPicker {
         id: picker
