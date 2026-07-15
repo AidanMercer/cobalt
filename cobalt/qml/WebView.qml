@@ -271,6 +271,30 @@ WebEngineView {
         queue(sweeps, sr);
     }
     var ROLES = /^(dialog|alertdialog|menu|listbox|tooltip)$/;
+    // The z-index that raises a float usually isn't ON the float. Fluent parks
+    // it on a fixed portal layer and leaves the popup itself at z-index:auto —
+    // Outlook's calendar peek is .ms-Callout{position:absolute;z-index:auto}
+    // under .ms-Layer--fixed{z-index:1000000}, so reading only the element's
+    // own z-index scored it 0 and every roleless popup stripped see-through.
+    // Walk up for the effective one. Cheap: callers only reach this for
+    // positioned, untagged elements, and portals sit shallow under their layer.
+    function raised(el, cs, win) {
+        if (parseInt(cs.zIndex, 10) >= 100) return true;   // NaN ("auto") fails
+        // The raiser must be a portal LAYER — out of flow and elevated. Page
+        // furniture is elevated too (a sticky header at z-index:200), and
+        // counting it turns every absolute badge under one into a frost card.
+        // Walk THROUGH the unpositioned nodes between: fluent's chain is
+        // callout > container{relative} > content{static} > layer{fixed}.
+        var n = el.parentElement, hops = 0;
+        while (n && hops++ < 8) {
+            var ncs = win.getComputedStyle(n);
+            if ((ncs.position === "fixed" || ncs.position === "absolute")
+                    && parseInt(ncs.zIndex, 10) >= 100)
+                return true;
+            n = n.parentElement;
+        }
+        return false;
+    }
     function surface(el, cs, win) {
         var out = cs.position === "fixed" || cs.position === "absolute";
         var tagged = ROLES.test((el.getAttribute && el.getAttribute("role")) || "")
@@ -280,8 +304,8 @@ WebEngineView {
         // puts the role on a statically-positioned popover inside a fixed
         // wrapper, so requiring position on the tagged element let Teams' menus
         // slip through and get stripped see-through. Untagged floats still need
-        // fixed/absolute + a real z-index.
-        if (!(tagged || (out && (parseInt(cs.zIndex, 10) || 0) >= 100)))
+        // fixed/absolute + a real (inherited) z-index.
+        if (!(tagged || (out && raised(el, cs, win))))
             return null;
         if (cs.pointerEvents === "none" || cs.visibility === "hidden")
             return null;
@@ -293,6 +317,11 @@ WebEngineView {
         // list body is absolute + z-indexed + thousands of px tall, and carding
         // it blacks out the whole chat column during scroll
         if (r.height > win.innerHeight * 1.2) return null;
+        // one card per float: now that a layer's z-index reaches every
+        // positioned descendant, an inner absolute (a callout beak, a decoration)
+        // would stack a second 0.85 card on top of its own popup's
+        if (el.parentElement && el.parentElement.closest("[data-cobalt-card]"))
+            return null;
         return r;
     }
     function strip(el) {
