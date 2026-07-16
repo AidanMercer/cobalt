@@ -5,6 +5,7 @@ import QtQuick
 Rectangle {
     id: bar
     property string findCount: ""
+    property string wordmark: ""   // themes voice the right-hand badge
 
     color: Theme.bg
     Rectangle {              // hairline on top
@@ -59,6 +60,14 @@ Rectangle {
             color: Theme.accent2
             font.pixelSize: 11
             font.bold: true
+            font.family: Theme.font
+        }
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: bar.wordmark
+            visible: bar.wordmark !== ""
+            color: Theme.subtext
+            font.pixelSize: 11
             font.family: Theme.font
         }
     }

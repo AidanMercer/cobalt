@@ -50,6 +50,57 @@ Window {
     Shortcut { sequences: ["Ctrl+Q"]; onActivated: App.quit() }
     Shortcut { sequences: ["F5"]; onActivated: view.reload() }
 
+    // ---- rice theme layer ----
+    // Optional cobalt.qml from the active ~/.config/themes/<x>/ — same slot
+    // grammar as beryl/mica/frostify: an invisible Item root that may expose
+    // backdrop/overlay Components plus a `wordmark` string for the status
+    // line. The backdrop is declared before the bars+view so it stacks under
+    // them: the glass bars AND the stripped transparent Teams regions all
+    // composite over the scenery. The overlay rides above the bars and page,
+    // below cobalt's own modals. Injected: pal (snapshot palette) and host
+    // (this window — active, navId, loading). See themes/AI-INSTRUCTION.md.
+    // navId bumps on every SPA navigation — rail switches (chat/calendar/…)
+    // land here, the Teams analog of a page turn.
+    property int navId: 0
+    Connections {
+        target: view
+        function onUrlChanged() { win.navId++ }
+    }
+    readonly property bool loading: view.loading
+
+    function riceProp(name, fallback) {
+        var it = riceLoader.item
+        if (!it) return fallback
+        var v = it[name]
+        return v === undefined ? fallback : v
+    }
+    Loader {
+        id: riceLoader
+        visible: false
+        function reload() {
+            source = ""   // drop the old chrome before swapping injections
+            if (!Rice.source) return
+            var props = {}
+            if (Rice.wantsPal) props.pal = Rice.pal
+            if (Rice.wantsHost) props.host = win
+            setSource(Rice.source, props)
+        }
+        onStatusChanged: if (status === Loader.Error)
+            console.warn("theme chrome failed to load:", Rice.source)
+        Component.onCompleted: reload()
+    }
+    Connections {
+        target: Rice
+        function onThemeChanged() { riceLoader.reload() }
+    }
+
+    // theme scenery under everything (declared before the bars+view = stacked below)
+    Loader {
+        id: backdropFx
+        anchors.fill: parent
+        sourceComponent: win.riceProp("backdrop", null) || null
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -90,7 +141,17 @@ Window {
             id: footer
             Layout.fillWidth: true
             Layout.preferredHeight: 22
+            wordmark: win.riceProp("wordmark", "")
         }
+    }
+
+    // theme scenery above the bars and page (flourishes, sheens) — click-through
+    // by contract (theme overlays carry no input handlers), below cobalt's own
+    // cmdline/toast/help/picker which are declared after it
+    Loader {
+        id: overlayFx
+        anchors.fill: parent
+        sourceComponent: win.riceProp("overlay", null) || null
     }
 
     // ex / search line — sits over the status bar while open
