@@ -62,6 +62,23 @@ Window {
 
                 Component.onCompleted: if (pop.request) pop.request.openIn(view)
 
+                // same policy as the main view — Teams pops meetings out into
+                // these windows, and an unhandled permission request is a
+                // silent deny, which blocked the camera exactly where calls
+                // actually happen
+                onPermissionRequested: function (permission) {
+                    var P = WebEnginePermission.PermissionType
+                    var t = permission.permissionType
+                    var isMedia = t === P.MediaAudioCapture || t === P.MediaVideoCapture
+                                || t === P.MediaAudioVideoCapture
+                                || t === P.DesktopAudioVideoCapture || t === P.DesktopVideoCapture
+                    var benign = t === P.Notifications || t === P.ClipboardReadWrite
+                    if (benign || (isMedia && Config.auto_grant_media))
+                        permission.grant()
+                    else
+                        permission.deny()
+                }
+
                 // a popup that closes itself (auth complete) tears down the window
                 onWindowCloseRequested: pop.close()
                 onNewWindowRequested: function (r) { r.openIn(view) }

@@ -105,6 +105,11 @@ washes out over a bright wallpaper, lower toward 0.2 for more see-through),
 don't remove it or login loops). Page text is the rice theme's **accent**
 colour (legibility-clamped), so it follows every theme switch.
 
+If Teams can't see your camera/mic, launch with `cobalt.sh --allow-devices`
+(alias `--allow-media`) — it forces `auto_grant_media` on for that run,
+whatever the config says. Note cobalt is single-instance: if it's already
+running, quit it (`Ctrl+Q`) first or the flag is ignored.
+
 ## Theming — "full send" transparency
 
 `transparent = true` (default) strips Teams' backgrounds so your wallpaper +

@@ -93,8 +93,21 @@ def main():
     t0 = time.monotonic()
     _start_logging()
 
+    # our flags come out before Qt sees argv (Qt warns on unknown args).
+    # --allow-devices: force camera/mic/device grants on, whatever the config
+    # says — media permissions are transient in QtWebEngine (never stored), so
+    # a runtime override is the only lever there is.
+    argv = sys.argv[:]
+    allow_devices = False
+    for flag in ("--allow-devices", "--allow-media"):
+        while flag in argv:
+            argv.remove(flag)
+            allow_devices = True
+
     config.ensure()
     cfg = config.load()
+    if allow_devices:
+        cfg["auto_grant_media"] = True
 
     # force_dark asks Chromium to auto-darken *all* web content — the only way
     # to darken the Teams canvas itself, since Teams renders in iframes CSS
@@ -114,13 +127,16 @@ def main():
     qInstallMessageHandler(_qt_message_handler)
     QtWebEngineQuick.initialize()
 
-    app = QGuiApplication(sys.argv)
+    app = QGuiApplication(argv)
     app.setApplicationName("cobalt")
     app.setDesktopFileName("cobalt")   # Wayland app_id Hyprland matches
 
     # single instance: a Chromium profile can't be shared, so a second launch
     # just raises the running window and exits before touching the profile.
     if ipc.try_forward():
+        if allow_devices:
+            print("[perm] --allow-devices ignored — cobalt is already running; "
+                  "quit it (Ctrl+Q) and relaunch with the flag", flush=True)
         print("[ipc] already running — raised it", flush=True)
         return
     server = ipc.InstanceServer(app)
@@ -208,6 +224,8 @@ def main():
         fresh = config.load()
         cfg.clear()
         cfg.update(fresh)
+        if allow_devices:
+            cfg["auto_grant_media"] = True
         keys.reload_binds()
         ctx.setContextProperty("Config", cfg)
         bridge.reskinRequested.emit()
