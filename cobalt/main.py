@@ -14,6 +14,7 @@ from .api import Api
 from .hints import Hints
 from .keys import KeyController, KeyFilter
 from .media import MediaController
+from .picker import FilePicker
 from .theme import ThemeManager
 
 _LOG_CAP = 1024 * 1024
@@ -190,6 +191,11 @@ def main():
     ctx.setContextProperty("Media", media)
     ctx.setContextProperty("Vim", keys)   # "Keys" would collide with QML's attached Keys
     ctx.setContextProperty("api", api)
+    # upload picker (mica). Capital-P "Picker" — not the lowercase `picker` id
+    # in WebView.qml, which is the screen-SHARE surface list.
+    picker = FilePicker(parent=app)
+    picker.toast.connect(api.toast)
+    ctx.setContextProperty("Picker", picker)
 
     # re-set the Theme dict on every rice switch; QML re-evaluates every Theme.*
     # binding. cobalt only themes its own chrome (Teams renders in iframes we

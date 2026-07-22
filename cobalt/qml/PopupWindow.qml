@@ -82,6 +82,9 @@ Window {
                 // a popup that closes itself (auth complete) tears down the window
                 onWindowCloseRequested: pop.close()
                 onNewWindowRequested: function (r) { r.openIn(view) }
+
+                // popped-out meetings attach files too
+                UploadPicker { view: view }
             }
         }
     }

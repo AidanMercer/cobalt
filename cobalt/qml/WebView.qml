@@ -96,6 +96,9 @@ WebEngineView {
         PopupWindow {}
     }
 
+    // attaching a file in a chat goes through mica, not Chromium's own dialog
+    UploadPicker { view: view }
+
     // ---- transparency engine (lifted from beryl) -----------------------------
     // Only background-color is cleared, so images survive; text is repainted in
     // the rice palette (a site's near-black text would vanish on dark frost).
